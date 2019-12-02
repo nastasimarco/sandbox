@@ -24,23 +24,27 @@ for i in range(len(data.columns)):
         new_columns += [(data.columns[i-1][0], data.columns[i][1])]
 data.set_axis(new_columns, axis='columns', inplace=True)
 
-# Selecting even columns from DataFrame
-even_col = data.loc[data.index, [data.columns[2*i] 
-            for i in range(round(len(data.columns)/2))]]
-# Selecting odd columns from DataFrame
-odd_col = data.loc[data.index, [data.columns[2*i+1] 
-            for i in range(round(len(data.columns)/2)-1)]]
+# Selecting even columns from DataFrame (containing mean values)
+# even_col = data.loc[data.index, [data.columns[2*i] 
+#             for i in range(round(len(data.columns)/2))]]
+even_col = data[data.columns[0::2]]
+# Selecting odd columns from DataFrame (containing dev.std values)
+# odd_col = data.loc[data.index, [data.columns[2*i+1] 
+#             for i in range(round(len(data.columns)/2)-1)]]
+odd_col = data[data.columns[1::2]]
 
+# making a plot of DataFrame even columns
+plt.figure()
 y_errors = odd_col.values
-# making a plot of even columns DataFrame
 even_col.plot(marker='o') #, yerr=y_errors[:,0], capsize=10)
 plt.title('Sound pressure spectrum')
 plt.xlabel('Frequency bands (Hz)')
 # selecting a subset of ticks for x axes of the plot
-new_xticks = np.arange(0, len(even_col.index)-1, step=2)
+new_xticks = np.arange(0, len(even_col.index)-1, step=3)
+new_ticks_labels = [even_col.index[new_xticks][i].replace("Hz","")
+                        for i in range(len(new_xticks))]
 # plt.xticks(new_xticks, even_col.index[new_xticks])
-plt.xticks(new_xticks, [even_col.index[new_xticks][i].replace("Hz","")
-                        for i in range(len(new_xticks))])
-
+plt.xticks(new_xticks, new_ticks_labels)
 plt.ylabel('Sound pressure level (dB)')
+
 plt.show()
