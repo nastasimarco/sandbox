@@ -34,7 +34,6 @@ even_col = data[data.columns[0::2]]
 odd_col = data[data.columns[1::2]]
 
 # making a plot of DataFrame even columns
-plt.figure()
 y_errors = odd_col.values
 even_col.plot(marker='o') #, yerr=y_errors[:,0], capsize=10)
 plt.title('Sound pressure spectrum')
