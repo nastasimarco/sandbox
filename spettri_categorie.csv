@@ -1,6 +1,6 @@
-;RORO;;Porta container;;Motocisterna;;Traghetto;;Chimichiera;
+;RORO;;Container ship;;Oil tanker;;Ferry;;Chemical tanker;
 ;media;dev.std;media;dev.std;media;dev.std;media;dev.std;media;dev.std
-LAeq;66.6;4.4;68.2;4.0;61.2;2.7;63.8;2.2;65.0;3.5
+$L_{Aeq}$;66.6;4.4;68.2;4.0;61.2;2.7;63.8;2.2;65.0;3.5
 20 Hz;75.7;7.3;69.4;5.8;63.2;5.7;70.5;4.2;63.7;4.6
 25 Hz;75.1;6.8;68.6;4.3;62.8;4.3;71.5;7.3;66.3;4.6
 31.5 Hz;73.8;5.0;70.7;5.0;65.5;6.4;72.3;3.4;67.7;4.9
