@@ -52,19 +52,43 @@ def spectrum_plot(inputfile, category=0, xticks_step=3):
 
     # making a plot of chosen column (category)
     # plt.figure()
-    spectrum_plt = plt.bar(x_data, y_data, yerr=y_errors, capsize=5)
-    leq_plt = plt.bar(x_data[0], y_data[0], yerr=y_errors[0], capsize=5)
+    # fig, ax = plt.subplots()
+    ax = plt.gca()
+    spectrum_plt = ax.bar(x_data, y_data, yerr=y_errors, capsize=5)
+    # leq_plt = ax.bar(x_data[0], y_data[0], yerr=y_errors[0], capsize=5)
+    leq_plt = ax.bar(x_data[0], y_data[0])
     # plt.legend((spectrum_plt, leq_plt),
     #            ('1/3 octave bands', '$L_{Aeq}$ (dB(A))'))
-    plt.legend((spectrum_plt, leq_plt),
+    ax.legend((spectrum_plt, leq_plt),
                ('1/3 octave bands', 'broadband noise (dB(A))'))
     plot_title = f'Sound pressure spectrum - category: {chosen_col.name[0]}'
-    plt.title(plot_title)
-    plt.xlabel('Frequency bands (Hz)')
-    plt.ylabel('Sound pressure level (dB)')
+    ax.set_title(plot_title)
+    ax.set_xlabel('Frequency bands (Hz)')
+    ax.set_ylabel('Sound pressure level (dB)')
     # selecting a subset of ticks for x axes of the plot
     new_xticks = np.arange(0, len(even_col.index)-1, step=xticks_step)
-    new_ticks_labels = [even_col.index[new_xticks][i].replace("Hz", "")
+    new_xticks_labels = [even_col.index[new_xticks][i].replace("Hz", "")
                         for i in range(len(new_xticks))]
-    plt.xticks(new_xticks, new_ticks_labels)
+    ax.set_xticks(new_xticks)
+    ax.set_xticklabels(new_xticks_labels)
+    
+    def autolabel(rects, voffset):
+        """Attach a text label above each bar in *rects*,
+         displaying its height.
+        """
+        for i, rect in enumerate(rects):
+            height = rect.get_height()
+            x = rect.get_x() + rect.get_width() / 2
+            y = height + voffset[i] # 
+            ax.annotate('{}'.format(height),
+                        xy=(x, y),
+                        xytext=(0, 0.5),  # 3 points vertical offset
+                        textcoords="offset points",
+                        ha='center', va='bottom',
+                        size=6.5)
+
+    autolabel(spectrum_plt, y_errors)
+    # fig.tight_layout()
+
     # plt.show()
+    # plt.ion(); plt.show()
