@@ -60,7 +60,7 @@ def spectrum_plot(inputfile, category=0, xticks_step=3):
     # plt.legend((spectrum_plt, leq_plt),
     #            ('1/3 octave bands', '$L_{Aeq}$ (dB(A))'))
     ax.legend((spectrum_plt, leq_plt),
-               ('1/3 octave bands', 'broadband noise (dB(A))'))
+              ('1/3 octave bands', 'broadband level (dB(A))'))
     plot_title = f'Sound pressure spectrum - category: {chosen_col.name[0]}'
     ax.set_title(plot_title)
     ax.set_xlabel('Frequency bands (Hz)')
@@ -68,7 +68,7 @@ def spectrum_plot(inputfile, category=0, xticks_step=3):
     # selecting a subset of ticks for x axes of the plot
     new_xticks = np.arange(0, len(even_col.index)-1, step=xticks_step)
     new_xticks_labels = [even_col.index[new_xticks][i].replace("Hz", "")
-                        for i in range(len(new_xticks))]
+                         for i in range(len(new_xticks))]
     ax.set_xticks(new_xticks)
     ax.set_xticklabels(new_xticks_labels)
     
@@ -79,13 +79,14 @@ def spectrum_plot(inputfile, category=0, xticks_step=3):
         for i, rect in enumerate(rects):
             height = rect.get_height()
             x = rect.get_x() + rect.get_width() / 2
-            y = height + voffset[i] # 
+            y = height + voffset[i]
             ax.annotate('{}'.format(height),
                         xy=(x, y),
-                        xytext=(0, 0.5),  # 3 points vertical offset
+                        xytext=(0, 0.5),  # 0.5 points vertical offset
                         textcoords="offset points",
                         ha='center', va='bottom',
-                        size=6.5)
+                        weight='bold',
+                        size=6.2)
 
     autolabel(spectrum_plt, y_errors)
     # fig.tight_layout()
