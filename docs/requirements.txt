@@ -1,2 +1,2 @@
 numpy
-sphinx 3+
+sphinx >2
