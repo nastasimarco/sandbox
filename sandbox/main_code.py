@@ -15,5 +15,10 @@ def simple_print():
     print(my_array)
     # return None
 
+def useless_func():
+    """This does nothing.
+    """
+    pass
+
 if __name__ == "__main__":
     simple_print()
