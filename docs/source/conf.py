@@ -5,7 +5,6 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 
-master_doc = 'index' # fix an error on readthedocs asking contents.rst
 
 # -- Path setup --------------------------------------------------------------
 
@@ -27,7 +26,9 @@ copyright = '2020, Marco'
 author = 'Marco'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+from sandbox.__version__  import __version__
+version = __version__
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -53,6 +54,7 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+master_doc = 'index' # fix an error on readthedocs asking contents.rst
 
 # -- Options for HTML output -------------------------------------------------
 
