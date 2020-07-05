@@ -8,7 +8,7 @@ Welcome to sandbox project's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption:
+   :caption: Contents:
 
 
 
