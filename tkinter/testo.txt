@@ -1,0 +1,1 @@
+Questo file di testo è stato scritto con un editor di testo realizzato con tkinter in Python. Wow!
