@@ -18,7 +18,7 @@ x_c = WIDTH/2
 y_c = HEIGHT/2
 
 # animation features
-fps = 200
+fps = 100
 dt = 1/fps # time step (s)
 running_time = 600 # s
 # n_frames=1000
@@ -26,7 +26,7 @@ n_frames = running_time*fps
 
 # dees features
 d_r = 275 # dee radius
-d_gap = 30
+d_gap = 50
 d1_coord = (x_c - (d_r + d_gap/2), y_c - d_r, x_c + (d_r - d_gap/2), y_c + d_r)
 d2_coord = (x_c - (d_r - d_gap/2), y_c - d_r, x_c + (d_r + d_gap/2), y_c + d_r)
 d1_c_x = x_c - d_gap/2
@@ -44,7 +44,7 @@ coord = (x - r_disc, y - r_disc, x + r_disc, y + r_disc)
 
 # motion features
 B_field = 5
-E_field_0 = 200
+E_field_0 = 300
 vx = 0
 vy = 0
 ax = 0

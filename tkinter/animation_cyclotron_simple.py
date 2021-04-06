@@ -18,15 +18,15 @@ x_c = WIDTH/2
 y_c = HEIGHT/2
 
 # animation features
-fps = 50
+fps = 100
 dt = 1/fps # time step (s)
-running_time = 5 # s
+running_time = 90 # s
 # n_frames=1000
 n_frames = running_time*fps
 
 # dees features
-d_r = 275 # dee radius
-d_gap = 30
+d_r = 250 # dee radius
+d_gap = 50
 d1_coord = (x_c - (d_r + d_gap/2), y_c - d_r, x_c + (d_r - d_gap/2), y_c + d_r)
 d2_coord = (x_c - (d_r - d_gap/2), y_c - d_r, x_c + (d_r + d_gap/2), y_c + d_r)
 d1_c_x = x_c - d_gap/2
@@ -35,8 +35,8 @@ d1_c_y = y_c
 d2_c_y = y_c
 
 # particle features
-x = x_c
-y = y_c
+x = x_c - 1
+y = y_c + 25
 r_disc = 2
 charge = 1
 mass = 1
@@ -156,7 +156,7 @@ for i in range(n_frames - 1):
         canvas.itemconfigure(region, text="Region: outer")
     if x+dx < 0 or x+dx > WIDTH or y+dy < 0 or y+dy > HEIGHT:
         break
-    dy = -dy # fix the direction of y axis
+    # dy = -dy # fix the direction of y axis
     canvas.create_line(x, y, x + dx, y + dy, fill="red")
     x+=dx
     y+=dy
