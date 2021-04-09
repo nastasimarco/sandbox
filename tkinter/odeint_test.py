@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
 
-def func(z, t, params):
+def derive(z, t, params):
     x, y, vx, vy = z
     q, m, B, E, gap, D_r = params
     if ( # inside one of the dees, E_field = 0
@@ -64,10 +64,10 @@ gap = 10
 D_r = 200 # dee radius
 params = [q, m, B, E, gap, D_r]
 
-n_periods = 10
-t = np.linspace(0, 2*np.pi*n_periods + np.pi/2, num=200*n_periods)
+n_periods = 20
+t = np.linspace(0, 2*np.pi*n_periods + np.pi/2, num=100*n_periods)
 
-sol = odeint(func, z0, t, args=(params,))
+sol = odeint(derive, z0, t, args=(params,))
 x = sol[:, 0]
 y = sol[:, 1]
 vx = sol[:, 2]
@@ -75,7 +75,7 @@ vy = sol[:, 3]
 v = np.sqrt(vx**2 + vy**2)
 R = (m*v) / (q*B)
 
-plt.plot(x, y, '.-')
+plt.plot(x, y, '.', markersize=0.5)
 plt.axvline(x=-gap/2)
 plt.axvline(x=gap/2)
 # plt.plot(t, vx, '.', t, vy, '.')
@@ -83,7 +83,19 @@ plt.gca().set_aspect('equal', adjustable='box')
 # plt.xlim([-100, 100])
 # plt.ylim([-100, 100])
 
+# plt.figure()
+# plt.plot(t, v0 + np.sqrt(2*m*q*E*gap*t/np.pi), t, R, '.', markersize=0.5)
+
 plt.figure()
-plt.plot(t, v0 + np.sqrt(2*m*q*E*gap*t/np.pi), t, R)
+plt.plot(t, v0 + np.sqrt(2*m*q*E*gap*t/np.pi), label='Theoretic Radius increase')
+plt.plot(t, R, '.', markersize=0.5, label='Radius')
+plt.plot(t, x, '.', markersize=0.5, label='x coordinate')
+plt.plot(t, (q/m * E*np.cos(q*B*t/m)), '.', markersize=0.5, label='E field ax')
+plt.axhline(y=-gap/2)
+plt.axhline(y=+gap/2)
+plt.ylim([-D_r, D_r])
+plt.legend()
+plt.grid()
+plt.ion()
 
 plt.show()
