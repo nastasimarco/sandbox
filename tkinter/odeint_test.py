@@ -1,34 +1,15 @@
-# import numpy as np
-# from scipy.integrate import odeint
-# import matplotlib.pyplot as plt
-
-# def dydt(y0, t, params):
-#     x, v = y0
-#     g, = params
-#     derivs = [v, g]
-#     return derivs
-
-# x0 = 0
-# v0 = 0
-# y0 = [x0, v0]
-
-# g = -9.8
-# params = [g]
-
-# t = np.linspace(0, 100)
-
-# sol = odeint(dydt, y0, t, args=(params,))
-# x = sol[:, 0]
-# plt.plot(t, x)
-# plt.plot(t, x0 + v0*t + 0.5*g*t**2, "--")
-# plt.show()
-
+"""Odeint test for the motion of a particle in a cyclotron."""
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.integrate import odeint
+from scipy.integrate import odeint, solve_ivp
+from scipy import signal
 
-def derive(z, t, params):
+def derive(t, z, params):
+    """Compute the derivatives of input z (tuple containing x, y, vx, vy)
+    at times in t array.
+    params contains: charge, mass, B field, E field, gap size, dee radius.
+    """
     x, y, vx, vy = z
     q, m, B, E, gap, D_r = params
     if ( # inside one of the dees, E_field = 0
@@ -41,14 +22,17 @@ def derive(z, t, params):
     elif ( # inside the gap, E_field != 0
           (x > - gap/2) and (x < gap/2) and (y > - D_r) and (y < D_r)
          ):
-        ax = (q/m * B * (vy)) + (q/m * E*np.cos(q*B*t/m))
+        # ax = (q/m * B * (vy)) + (q/m * E*np.cos(q*B*t/m))
+        ax = (q/m * B * (vy)) + (q/m * E*signal.square(q*B*t/m + np.pi/2))
         ay = - q/m * B * (vx)
-    else:
+    else: # outer region, E_field = 0, B_field = 0
         ax = 0
         ay = 0
+
     derivs = [vx, vy, ax, ay]
     return derivs
 
+# initial conditions
 x0 = 0
 y0 = 0
 vx0 = 0
@@ -56,18 +40,23 @@ vy0 = 0
 v0 = np.sqrt(vx0**2 + vy0**2)
 z0 = [x0, y0, vx0, vy0]
 
-q = 1
-m = 1
-B = 1
-E = 50
-gap = 10
+# constant parameters (arbitrary units)
+q = 1 # charge
+m = 1 # mass
+B = 1 # B field
+E = 10 # E field
+gap = 20 # gap size
 D_r = 200 # dee radius
 params = [q, m, B, E, gap, D_r]
 
-n_periods = 20
-t = np.linspace(0, 2*np.pi*n_periods + np.pi/2, num=100*n_periods)
+# define t array 
+n_periods = 50
+ppp = 200 # points per period
+t = np.linspace(0, np.round(2*np.pi*n_periods + np.pi/2), num=ppp*n_periods)
 
-sol = odeint(derive, z0, t, args=(params,))
+# solve the differential equations using odeint
+sol = odeint(derive, z0, t, args=(params,), tfirst=True)
+# ivp_sol = solve_ivp(derive, (t[0], t[-1]), z0, args=(params,), dense_output=True)
 x = sol[:, 0]
 y = sol[:, 1]
 vx = sol[:, 2]
@@ -75,27 +64,45 @@ vy = sol[:, 3]
 v = np.sqrt(vx**2 + vy**2)
 R = (m*v) / (q*B)
 
-plt.plot(x, y, '.', markersize=0.5)
-plt.axvline(x=-gap/2)
-plt.axvline(x=gap/2)
-# plt.plot(t, vx, '.', t, vy, '.')
-plt.gca().set_aspect('equal', adjustable='box')
-# plt.xlim([-100, 100])
-# plt.ylim([-100, 100])
+ax = np.zeros(x.shape)
+ay = np.zeros(y.shape)
 
-# plt.figure()
-# plt.plot(t, v0 + np.sqrt(2*m*q*E*gap*t/np.pi), t, R, '.', markersize=0.5)
+for i in range(len(x)):
+    _, _, ax[i], ay[i] = derive(t[i], sol[i,:], params)
+
+
+
+
 
 plt.figure()
-plt.plot(t, v0 + np.sqrt(2*m*q*E*gap*t/np.pi), label='Theoretic Radius increase')
-plt.plot(t, R, '.', markersize=0.5, label='Radius')
-plt.plot(t, x, '.', markersize=0.5, label='x coordinate')
-plt.plot(t, (q/m * E*np.cos(q*B*t/m)), '.', markersize=0.5, label='E field ax')
-plt.axhline(y=-gap/2)
-plt.axhline(y=+gap/2)
+
+plt.subplot(1, 2, 1)
+plt.plot(x, y, '.-', markersize=0.5, linewidth=0.5)
+plt.axvline(x=-gap/2)
+plt.axvline(x=gap/2)
+plt.xlabel("x (a.u.)")
+plt.ylabel("y (a.u.)")
+plt.gca().set_aspect('equal', adjustable='box')
+plt.xlim([- (D_r + 50) , (D_r + 50)])
+plt.ylim([- (D_r + 50) , (D_r + 50)])
+
+
+# plt.figure()
+plt.subplot(1, 2, 2)
+plt.axhline(y=-gap/2, color="black", linewidth=0.5)
+plt.axhline(y=+gap/2, color="black", linewidth=0.5)
+plt.plot(t, v0 + np.sqrt(2*m*q*E*gap*t/np.pi), label='Theoretic velocity increase')
+plt.plot(t, v, '.', markersize=1, label='velocity magnitude')
+plt.plot(t, x, '.', markersize=1, label='x coordinate')
+plt.plot(t, vx, '.', markersize=1, label='vx')
+plt.plot(t, ax, '.', markersize=1, label='ax')
+# plt.plot(t, y, '.', markersize=0.5, label='y coordinate')
+# plt.plot(t, (q/m * E*np.cos(q*B*t/m)), '.', markersize=0.5, label='E field ax')
+plt.plot(t, (q/m * E*signal.square(q*B*t/m + np.pi/2)), label='E field ax')
+plt.xlabel("time (a.u.)")
 plt.ylim([-D_r, D_r])
 plt.legend()
 plt.grid()
-plt.ion()
+# plt.ion()
 
 plt.show()
