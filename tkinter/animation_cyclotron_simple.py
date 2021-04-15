@@ -20,12 +20,12 @@ y_c = HEIGHT/2
 # animation features
 fps = 100
 dt = 1/fps # time step (s)
-running_time = 90 # s
+running_time = 600 # s
 # n_frames=1000
 n_frames = running_time*fps
 
 # dees features
-d_r = 250 # dee radius
+d_r = 275 # dee radius
 d_gap = 50
 d1_coord = (x_c - (d_r + d_gap/2), y_c - d_r, x_c + (d_r - d_gap/2), y_c + d_r)
 d2_coord = (x_c - (d_r - d_gap/2), y_c - d_r, x_c + (d_r + d_gap/2), y_c + d_r)
@@ -35,8 +35,8 @@ d1_c_y = y_c
 d2_c_y = y_c
 
 # particle features
-x = x_c - 1
-y = y_c + 25
+x = x_c
+y = y_c
 r_disc = 2
 charge = 1
 mass = 1
@@ -115,6 +115,7 @@ for i in range(n_frames - 1):
         (y < (y_c + d_r)) and
         (y > (y_c - d_r))
        ):
+        canvas.configure(bg="yellow")
         canvas.itemconfigure(region, text="Region: gap")
         Fx = charge*E_field
         ax = Fx/mass + (cycl_freq)**2 * radius * (- math.cos(cycl_freq*t))
@@ -134,6 +135,7 @@ for i in range(n_frames - 1):
           or
           ((x >= d2_c_x) and ((x - d2_c_x)**2 + (y - d2_c_y)**2 <= d_r**2))
          ):
+        canvas.configure(bg="white")
         canvas.itemconfigure(region, text="Region: dees")
         # radius = mass*math.sqrt(vx**2 + vy**2) / (charge*B_field)
         # dx = (radius*math.cos(cycl_freq*t) + x_c) - x
@@ -154,9 +156,9 @@ for i in range(n_frames - 1):
         vy = (cycl_freq*radius) * (+ math.cos(cycl_freq*t))
     else:
         canvas.itemconfigure(region, text="Region: outer")
+        canvas.configure(bg="white")
     if x+dx < 0 or x+dx > WIDTH or y+dy < 0 or y+dy > HEIGHT:
         break
-    # dy = -dy # fix the direction of y axis
     canvas.create_line(x, y, x + dx, y + dy, fill="red")
     x+=dx
     y+=dy

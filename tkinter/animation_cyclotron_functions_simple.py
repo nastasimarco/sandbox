@@ -159,7 +159,6 @@ for i in range(n_frames - 1):
         canvas.configure(bg="white")
     if x+dx < 0 or x+dx > WIDTH or y+dy < 0 or y+dy > HEIGHT:
         break
-    dy = dy # fix the direction of y axis
     canvas.create_line(x, y, x + dx, y + dy, fill="red")
     x+=dx
     y+=dy

@@ -4,10 +4,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint, solve_ivp
 from scipy import signal
+import time
 
 def derive(t, z, params):
-    """Compute the derivatives of input z (tuple containing x, y, vx, vy)
-    at times in t array.
+    """Compute the derivative of input z (tuple containing x, y, vx, vy)
+    at time t.
     params contains: charge, mass, B field, E field, gap size, dee radius.
     """
     x, y, vx, vy = z
@@ -46,21 +47,25 @@ m = 1 # mass
 B = 1 # B field
 E = 10 # E field
 gap = 20 # gap size
-D_r = 200 # dee radius
+D_r = 250 # dee radius
 params = [q, m, B, E, gap, D_r]
 
 # define t array 
-n_periods = 50
+n_periods = 100
 ppp = 200 # points per period
 t = np.linspace(0, np.round(2*np.pi*n_periods + np.pi/2), num=ppp*n_periods)
 
+t1 = time.time()
 # solve the differential equations using odeint
 sol = odeint(derive, z0, t, args=(params,), tfirst=True)
 # ivp_sol = solve_ivp(derive, (t[0], t[-1]), z0, args=(params,), dense_output=True)
+t2 = time.time()
+print("Time taken to solve with odeint:",t2-t1)
 x = sol[:, 0]
 y = sol[:, 1]
 vx = sol[:, 2]
 vy = sol[:, 3]
+
 v = np.sqrt(vx**2 + vy**2)
 R = (m*v) / (q*B)
 
@@ -70,14 +75,10 @@ ay = np.zeros(y.shape)
 for i in range(len(x)):
     _, _, ax[i], ay[i] = derive(t[i], sol[i,:], params)
 
-
-
-
-
 plt.figure()
 
 plt.subplot(1, 2, 1)
-plt.plot(x, y, '.-', markersize=0.5, linewidth=0.5)
+plt.plot(x, y, '.-', markersize=1, linewidth=0.5)
 plt.axvline(x=-gap/2)
 plt.axvline(x=gap/2)
 plt.xlabel("x (a.u.)")
@@ -94,11 +95,11 @@ plt.axhline(y=+gap/2, color="black", linewidth=0.5)
 plt.plot(t, v0 + np.sqrt(2*m*q*E*gap*t/np.pi), label='Theoretic velocity increase')
 plt.plot(t, v, '.', markersize=1, label='velocity magnitude')
 plt.plot(t, x, '.', markersize=1, label='x coordinate')
-plt.plot(t, vx, '.', markersize=1, label='vx')
+# plt.plot(t, vx, '.', markersize=1, label='vx')
 plt.plot(t, ax, '.', markersize=1, label='ax')
 # plt.plot(t, y, '.', markersize=0.5, label='y coordinate')
-# plt.plot(t, (q/m * E*np.cos(q*B*t/m)), '.', markersize=0.5, label='E field ax')
-plt.plot(t, (q/m * E*signal.square(q*B*t/m + np.pi/2)), label='E field ax')
+# plt.plot(t, (q/m * E*np.cos(q*B*t/m)), '.', markersize=1, label='qE/m')
+plt.plot(t, (q/m * E*signal.square(q*B*t/m + np.pi/2)), label='qE/m')
 plt.xlabel("time (a.u.)")
 plt.ylim([-D_r, D_r])
 plt.legend()
