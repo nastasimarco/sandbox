@@ -78,10 +78,14 @@ def Stop():
         PlayPause()
 
 def Read():
-    global input_params
-    # TODO: mettere un controllo sulla stringa
-    for i in range(len(input_params)):
-        input_params[i] = float(entries[i].get())
+    global input_params, entries
+    for i, entry in enumerate(entries):
+        try:
+            input_params[i] = float(entry.get())
+        except ValueError:
+            input_params[i] = default_params[i]
+            entries[i].delete(0, tk.END)
+            entries[i].insert(0, f"{input_params[i]:.2f}")
     
     if run:    
         UpdateParams()
