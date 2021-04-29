@@ -152,7 +152,6 @@ def SetWindow():
     frm_side.grid(row=0, column=1, sticky="NW")
 
     Reset()
-    FirstFrame()
 
     root.mainloop()
 

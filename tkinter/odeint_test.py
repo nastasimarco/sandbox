@@ -12,16 +12,16 @@ def derive(t, z, params):
     params contains: charge, mass, B field, E field, gap size, dee radius.
     """
     x, y, vx, vy = z
-    q, m, B, E, gap, D_r = params
+    q, m, B, E, gap, d_r = params
     if ( # inside one of the dees, E_field = 0
-          ((x <= - gap/2) and ((x + gap/2)**2 + (y)**2 <= D_r**2))
+          ((x <= - gap/2) and ((x + gap/2)**2 + (y)**2 <= d_r**2))
           or
-          ((x >= + gap/2) and ((x - gap/2)**2 + (y)**2 <= D_r**2))
+          ((x >= + gap/2) and ((x - gap/2)**2 + (y)**2 <= d_r**2))
         ):
         ax = (q/m * B * (vy))
         ay = - q/m * B * (vx)
     elif ( # inside the gap, E_field != 0
-          (x > - gap/2) and (x < gap/2) and (y > - D_r) and (y < D_r)
+          (x > - gap/2) and (x < gap/2) and (y > - d_r) and (y < d_r)
          ):
         # ax = (q/m * B * (vy)) + (q/m * E*np.cos(q*B*t/m))
         ax = (q/m * B * (vy)) + (q/m * E*signal.square(q*B*t/m + np.pi/2))
@@ -47,8 +47,8 @@ m = 1 # mass
 B = 1 # B field
 E = 10 # E field
 gap = 20 # gap size
-D_r = 250 # dee radius
-params = [q, m, B, E, gap, D_r]
+d_r = 250 # dee radius
+params = [q, m, B, E, gap, d_r]
 
 # define t array 
 n_periods = 100
@@ -84,8 +84,8 @@ plt.axvline(x=gap/2)
 plt.xlabel("x (a.u.)")
 plt.ylabel("y (a.u.)")
 plt.gca().set_aspect('equal', adjustable='box')
-plt.xlim([- (D_r + 50) , (D_r + 50)])
-plt.ylim([- (D_r + 50) , (D_r + 50)])
+plt.xlim([- (d_r + 50) , (d_r + 50)])
+plt.ylim([- (d_r + 50) , (d_r + 50)])
 
 
 # plt.figure()
@@ -101,7 +101,7 @@ plt.plot(t, ax, '.', markersize=1, label='ax')
 # plt.plot(t, (q/m * E*np.cos(q*B*t/m)), '.', markersize=1, label='qE/m')
 plt.plot(t, (q/m * E*signal.square(q*B*t/m + np.pi/2)), label='qE/m')
 plt.xlabel("time (a.u.)")
-plt.ylim([-D_r, D_r])
+plt.ylim([-d_r, d_r])
 plt.legend()
 plt.grid()
 # plt.ion()
