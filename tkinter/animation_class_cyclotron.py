@@ -5,21 +5,22 @@ from scipy import signal
 import time
 
 # global variables
-CANVAS_W = 1000
-CANVAS_H = 1000
+CANVAS_W = 1000 # px
+CANVAS_H = CANVAS_W
 scale = 1e3 # px/m
-timescale = 6.7e-5
+default_timescale = 6.7e-5
+timescale = default_timescale
 
-x0 = 0
-y0 = 0
-vx0 = 0
-vy0 = 0
+x0 = 0 # m
+y0 = 0 # m
+vx0 = 0 # m/s
+vy0 = 0 # m/s
 qp = 1.602176e-19 # elementary charge (Coulomb)
 mp = 1.67262e-27 # proton mass (Kg)
-B0 = 1e-3
-E0 = 1e1
-gap0 = 0.02
-dr0 = 0.45
+B0 = 1e-3 # T
+E0 = 1e1 # V/m
+gap0 = 0.02 # m
+dr0 = 0.45 # m
 
 run = False
 stopped = True
@@ -39,22 +40,21 @@ monitor_dict = dict(zip(monitor_lbls, monitor_vars))
 monitors = []
 
 class Cyclotron:
-    def __init__(self, canvas, z, params):
+    def __init__(self, canvas, z, params, timescale):
         self.canvas = canvas
         self.x, self.y, self.vx, self.vy = z
         self.q, self.m, self.B, self.E, self.gap, self.d_r = params
+        self.timescale = timescale
 
-        self.omega = self.q*self.B / self.m # cyclotron frequency
-        
         # center features
         self.c_x = CANVAS_W/2
         self.c_y = CANVAS_H/2
 
         # animation features
-        self.fps = 50
+        self.fps = 100
         self.ms = 1000/self.fps # time interval between frames (ms)
         
-        self.dt = 1e-3 * self.ms * timescale # time step (s)
+        self.dt = 1e-3 * self.ms * self.timescale # time step (s)
         self.t = np.array([0, self.dt])
         # running_time = 600 # s
         # # n_frames=1000
@@ -70,10 +70,11 @@ class Cyclotron:
             self.p_color = "black"
         
         # dees colors
-        if (self.E*signal.square(self.omega*self.t[0] + np.pi/2)) > 0:
+        omega = self.q*self.B / self.m # cyclotron frequency
+        if (self.E*signal.square(omega*self.t[0] + np.pi/2)) > 0:
             self.d1_color = "red"
             self.d2_color = "blue"
-        elif (self.E*signal.square(self.omega*self.t[0] + np.pi/2)) < 0:
+        elif (self.E*signal.square(omega*self.t[0] + np.pi/2)) < 0:
             self.d1_color = "blue"
             self.d2_color = "red"
         else:
@@ -161,6 +162,7 @@ class Cyclotron:
 
     def move_particle(self):
         global v
+        t1 = time.time()
         v = np.sqrt(self.vx**2 + self.vy**2)
         monitors_update()
         self.set_colors()
@@ -204,8 +206,20 @@ class Cyclotron:
                 y2 = CANVAS_H - (c_y + y)
 
                 self.canvas.create_line(x1, y1, x2, y2, fill=self.p_color)
-                self.t += self.dt
-                self.canvas.after(int(self.ms), self.move_particle)
+                self.dt = 1e-3 * self.ms * self.timescale # time step (s)
+                if (self.t[1] - self.t[0]) == self.dt:
+                    self.t += self.dt
+                else:
+                    self.t[0] = self.t[1]
+                    self.t[1] = self.t[0] + self.dt
+                t2 = time.time()
+                delay = (t2 - t1)*1000
+                if self.ms >= delay:
+                    self.canvas.after(int(self.ms - delay), self.move_particle)
+                else:
+                    # print("delayed frame")
+                    self.canvas.after(0, self.move_particle)
+                # self.canvas.after(int(self.ms - delay), self.move_particle)
         else:
             pass
 
@@ -220,26 +234,36 @@ def monitors_update():
         else:
             monitors[i]["text"] = f"{m[0]}: {m[1]}"
 
-def FirstFrame():
-    global cycl, canvas
-    canvas.delete(tk.ALL)
-    z = input_data[:4]
-    params = input_data[4:]
-    cycl = Cyclotron(canvas, z, params)
-    cycl.draw_first_frame()
+def TscaleDown():
+    global cycl, timescale
+    timescale = timescale / 10**(1/5)
+    lbl_tscale["text"] = f"Time scale = {timescale:.3e}"
+    cycl.timescale = timescale
+
+
+def TscaleUp():
+    global cycl, timescale
+    timescale = timescale * 10**(1/5)
+    lbl_tscale["text"] = f"Time scale = {timescale:.3e}"
+    cycl.timescale = timescale
 
 def Animate():
     cycl.move_particle()
 
 def UpdateParams():
     global cycl
+    # z = input_data[:4]
+    params = input_data[4:]
+    cycl.q, cycl.m, cycl.B, cycl.E = params[:-2]
+    cycl.timescale = timescale
+
+def FirstFrame():
+    global cycl, canvas
+    canvas.delete(tk.ALL)
     z = input_data[:4]
     params = input_data[4:]
-    # cycl.x, cycl.y, cycl.vx, cycl.vy = z
-    # cycl.q, cycl.m, cycl.B, cycl.E, cycl.gap, cycl.d_r = params
-    # cycl.t = np.array([0, cycl.dt])
-    cycl.q, cycl.m, cycl.B, cycl.E = params[:-2]
-
+    cycl = Cyclotron(canvas, z, params, timescale)
+    cycl.draw_first_frame()
 
 def SetEntries():
     global entries
@@ -257,7 +281,6 @@ def PlayPause():
         btn_play.configure(text="\u23F8")
         for i in static_params:
             entries[i]["state"] = "disabled"
-        # entries[-1]["state"] = "disabled"
     else:
         btn_play.configure(text="\u25B6")
 
@@ -271,12 +294,13 @@ def Stop():
         pass
 
     for i in static_params:
-            entries[i]["state"] = "normal"
+        entries[i]["state"] = "normal"
     FirstFrame()
     if run:
         PlayPause()
         Stop()
-        # stopped = True
+    else:
+        pass
 
 def Read():
     global input_data, entries
@@ -295,13 +319,17 @@ def Read():
     # UpdateParams()
     
 def Reset():
-    global input_data
+    global input_data, timescale
     input_data = np.array(default_data, dtype=float)
+    timescale = default_timescale
+    lbl_tscale["text"] = f"Time scale = {timescale:.3e}"
     SetEntries()
     Read()
     
 def SetWindow():
-    global canvas, btn_play, btn_stop, btn_read, entries, monitors
+    global canvas
+    global btn_play, btn_stop, btn_read, btn_tscale_down, btn_tscale_up
+    global entries, lbl_tscale, monitors
     # initialize root Window
     root = tk.Tk()
     root.title("Cyclotron")
@@ -342,6 +370,17 @@ def SetWindow():
         entries[i].grid(row=i, column=1, sticky="S", pady=3)
         lbl_unit.grid(row=i, column=2, sticky="SW", pady=3)
     frm_data.pack(pady=25)
+
+    # Timescale buttons and label inside their frame (inside side frame)
+    frm_tscale = tk.Frame(master=frm_side, relief=tk.RIDGE, borderwidth=1)
+    btn_tscale_down = tk.Button(master=frm_tscale, text="-", command=TscaleDown)
+    btn_tscale_down.grid(row=0, column=0, sticky="nsew")
+    lbl_tscale = tk.Label(master=frm_tscale)
+    lbl_tscale.grid(row=0, column=1)
+    btn_tscale_up = tk.Button(master=frm_tscale, text="+", command=TscaleUp)
+    btn_tscale_up.grid(row=0, column=2, sticky="nsew")
+    frm_tscale.pack()
+    
 
     # Monitor labels inside monitor frame (inside side frame)
     monitors = []
