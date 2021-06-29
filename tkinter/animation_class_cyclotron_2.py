@@ -28,7 +28,7 @@ class Cyclotron:
         # default data
         self.scale = 1e3 # length scale (pixel/m)
         self.default_timescale = 6.7e-5
-        self.fps = 50 # framerate (frame/s)
+        self.fps = 100 # framerate (frame/s)
         self.delayed = 0
         x0 = 0 # m
         y0 = 0 # m
@@ -47,7 +47,7 @@ class Cyclotron:
         self.units = ("m", "m", "m/s", "m/s", "C", "Kg", "T", "V/m", "m", "m")
 
         # indices of parameters that cannot be changed while playing animation
-        self.static_params = [0, 1, 2, 3, -2, -1]
+        self.static_params = (0, 1, 2, 3, -2, -1)
         
         # prepare the texts for the variables to monitor
         self.monitors_texts = (
@@ -57,19 +57,33 @@ class Cyclotron:
                                "\u03B3 = ...",
                               )
 
-        # set initial values for timescale, data and parameters
-        self.timescale = self.default_timescale
+        # set initial values for input_data and timescale
         self.input_data = np.array(self.default_data, dtype=float)
-        z = self.input_data[:4]
-        params = self.input_data[4:]
-        self.x, self.y, self.vx, self.vy = z
-        self.q, self.m, self.B, self.E, self.gap, self.d_r = params
-
+        self.timescale = self.default_timescale
+        
         # animation features
         self.ms = 1000/self.fps # time interval between frames (ms)
         self.dt = 1e-3 * self.ms * self.timescale # time step (s)
         # time array to solve differential equations
         self.t = np.array([0, self.dt])
+
+    def restore_default(self):
+        """Restore to default self.input_data and self.timescale"""
+        self.input_data = np.array(self.default_data, dtype=float)
+        self.timescale = self.default_timescale
+    
+    def set_data(self, static_flag):
+        """Set data reading input. If static_flag=False set only non
+        static paramters. If static_flag=True set all data and reset time.
+        """
+        if static_flag:
+            z = self.input_data[:4]
+            params = self.input_data[4:]
+            self.x, self.y, self.vx, self.vy = z
+            self.q, self.m, self.B, self.E, self.gap, self.d_r = params
+            self.t = np.array([0, self.dt])
+        else:
+            self.q, self.m, self.B, self.E = self.input_data[4:-2]
 
     def set_colors(self):
         """Set the particle color checking the charge and the dees colors
@@ -104,25 +118,24 @@ class Cyclotron:
         p_eV = (self.v * self.m * c) / qp # impulse of particle (eV/c)
         omega = self.q*self.B/self.m # cyclotron frequency
         gamma = 1 / (np.sqrt(1 - (self.v/c)**2))
-        monitors[0]["text"] = f"T = {np.abs((2*np.pi)/omega):.4e} s"
-        monitors[1]["text"] = f"v = {self.v:.4e} m/s"
-        monitors[2]["text"] = f"p = {p_eV/1e3:.4e} KeV/c"
-        monitors[3]["text"] = f"\u03B3 = {gamma:.4e}"
+        monitors[0]["text"] = f"T = {np.abs((2*np.pi)/omega):.3e} s"
+        monitors[1]["text"] = f"v = {self.v:.3e} m/s"
+        monitors[2]["text"] = f"p = {p_eV/1e3:.3e} KeV/c"
+        monitors[3]["text"] = f"\u03B3 = {gamma:.3e}"
 
     def draw_first_frame(self, canvas):
         """Draw the first frame of the animation on the given canvas."""
         self.canvas = canvas
 
+        self.set_colors()
+
         # center features
         self.cx = int(self.canvas["width"]) / 2
         self.cy = int(self.canvas["height"]) / 2
         
-        self.monitors_update(monitors)
-
         cx = self.cx
         cy = self.cy
         scale = self.scale
-        self.set_colors()
 
         # dees features
         # canvas coordinates of dees
@@ -199,20 +212,20 @@ class Cyclotron:
         self.vx = sol[:, 2][-1]
         self.vy = sol[:, 3][-1]
 
-    def move_particle(self, PlayPause_func, btn_play, status_bar):
+    def move_particle(self, PlayPause_func, btn_play, status_bar, monitors):
+        # TODO: lascio la variabile "run" globale?
         """Perform the animation. Use PlayPause_func to pause the 
         animation in the case the particle would go out of canvas, 
-        disable the play button (btn_play) and update the status_bar.
+        disable the play button (btn_play) and update the status_bar and
+        the monitors.
         Compute the time taken to produce a frame attempting to keep
         the animation fps constant, limitations depends on hardware.
         """
-        # global v
         t1 = time.time()
-        # v = np.sqrt(self.vx**2 + self.vy**2)
-        move_params = (PlayPause_func, btn_play, status_bar)
+        move_params = (PlayPause_func, btn_play, status_bar, monitors)
         self.set_colors()
+        self.monitors_update(monitors)
         if run:
-            self.monitors_update(monitors)
             z0 = self.x, self.y, self.vx, self.vy
             params = self.q, self.m, self.B, self.E, self.gap, self.d_r
             scale = self.scale
@@ -290,45 +303,34 @@ class Cyclotron:
             pass
 
 def TscaleDown():
-    global Cycl, timescale, lbl_tscale
-    timescale = timescale / 10**(1/5)
-    lbl_tscale["text"] = f"Time scale = {timescale:.3e}"
-    Cycl.timescale = timescale
+    global Cycl, lbl_tscale
+    Cycl.timescale = Cycl.timescale / 10**(1/5)
+    lbl_tscale["text"] = f"Time scale = {Cycl.timescale:.3e}"
 
 def TscaleUp():
-    global Cycl, timescale, lbl_tscale
-    timescale = timescale * 10**(1/5)
-    lbl_tscale["text"] = f"Time scale = {timescale:.3e}"
-    Cycl.timescale = timescale
+    global Cycl, lbl_tscale
+    Cycl.timescale = Cycl.timescale * 10**(1/5)
+    lbl_tscale["text"] = f"Time scale = {Cycl.timescale:.3e}"
 
 def Animate():
     global Cycl
-    move_params = (PlayPause, btn_play, status_bar)
+    move_params = (PlayPause, btn_play, status_bar, monitors)
     Cycl.move_particle(*move_params)
 
 def UpdateParams():
     global Cycl
-    # z = input_data[:4]
-    params = input_data[4:]
-    Cycl.q, Cycl.m, Cycl.B, Cycl.E = params[:-2]
-    Cycl.timescale = timescale
+    Cycl.set_data(static_flag=False)
     Cycl.monitors_update(monitors)
 
 def FirstFrame():
     global Cycl, canvas
     canvas.delete(tk.ALL)
-    z = input_data[:4]
-    params = input_data[4:]
-    Cycl.t = np.array([0, Cycl.dt])
-    Cycl.x, Cycl.y, Cycl.vx, Cycl.vy = z
-    Cycl.q, Cycl.m, Cycl.B, Cycl.E, Cycl.gap, Cycl.d_r = params
     Cycl.draw_first_frame(canvas)
 
 def PlayPause():
-    global run, btn_play, stopped, entries, Cycl
+    global run, btn_play, stopped, status_bar, entries, Cycl
     run = not run
     stopped = False
-    Cycl.monitors_update(monitors)
     if run:
         status_bar["text"] = "Playing..."
         Animate()
@@ -342,7 +344,6 @@ def PlayPause():
 def Stop():
     global stopped, btn_play, entries, Cycl
     stopped = True
-    Cycl.monitors_update(monitors)
     if (btn_play["state"] == "disabled"):
         btn_play["state"] = "normal"
     else:
@@ -354,18 +355,20 @@ def Stop():
     else:
         for i in Cycl.static_params:
             entries[i]["state"] = "normal"
+        Cycl.set_data(static_flag=True)
+        Cycl.monitors_update(monitors)
         FirstFrame()
         status_bar["text"] = "Ready"
 
 def Read():
-    global input_data, entries
+    global entries
     for i, entry in enumerate(entries):
         try:
-            input_data[i] = float(entry.get())
+            Cycl.input_data[i] = float(entry.get())
         except ValueError:
-            input_data[i] = Cycl.default_data[i]
+            Cycl.input_data[i] = Cycl.default_data[i]
         entries[i].delete(0, tk.END)
-        entries[i].insert(0, f"{input_data[i]:.3e}")
+        entries[i].insert(0, f"{Cycl.input_data[i]:.3e}")
     
     if (not stopped):    
         UpdateParams()
@@ -374,17 +377,14 @@ def Read():
 
 def SetEntries():
     global entries
-    for i, p in enumerate(input_data):
+    for i, p in enumerate(Cycl.input_data):
         entries[i].delete(0, tk.END)
         entries[i].insert(0, f"{p:.3e}")
     
 def Reset():
-    global input_data, timescale, lbl_tscale
-    input_data = np.array(Cycl.default_data, dtype=float)
-    # input_data = Cycl.input_data
-    timescale = Cycl.default_timescale
-    lbl_tscale["text"] = f"Time scale = {timescale:.3e}"
-    Cycl.timescale = timescale
+    global lbl_tscale, Cycl
+    Cycl.restore_default()
+    lbl_tscale["text"] = f"Time scale = {Cycl.timescale:.3e}"
     SetEntries()
     Read()
     
@@ -434,24 +434,24 @@ def SetWindow(labels, units, monitors_texts):
 
     # Timescale buttons and label inside their frame (inside side frame)
     frm_tscale = tk.Frame(master=frm_side, relief=tk.RIDGE, borderwidth=0)
-    btn_tscale_down = tk.Button(master=frm_tscale, text="-", command=TscaleDown)
-    btn_tscale_down.grid(row=0, column=0, sticky="nsew")
+    btn_tscale_down = tk.Button(master=frm_tscale, text=" - ", command=TscaleDown)
     lbl_tscale = tk.Label(master=frm_tscale)
+    btn_tscale_up = tk.Button(master=frm_tscale, text=" + ", command=TscaleUp)
     lbl_tscale.grid(row=0, column=1, padx=4)
-    btn_tscale_up = tk.Button(master=frm_tscale, text="+", command=TscaleUp)
+    btn_tscale_down.grid(row=0, column=0, sticky="nsew")
     btn_tscale_up.grid(row=0, column=2, sticky="nsew")
     frm_tscale.pack()
     
     # Monitor labels inside their frame (inside side frame)
     monitors = []
-    frm_monitors = tk.Frame(master=frm_side, relief=tk.RIDGE, borderwidth=1)
+    frm_monitors = tk.Frame(master=frm_side, relief=tk.SUNKEN, borderwidth=1)
     for i, _ in enumerate(monitors_texts):
         monitors.append(tk.Label(master=frm_monitors))
         monitors[i].grid(row=i, column=0, sticky="W", padx=10, pady=3)
     frm_monitors.pack(pady=40)
 
     # Status bar inside his frame (inside side frame)
-    frm_satus = tk.Frame(master=frm_side, relief=tk.RIDGE, borderwidth=1)
+    frm_satus = tk.Frame(master=frm_side, relief=tk.SUNKEN, borderwidth=1)
     status_text = "Ready"
     status_bar = tk.Label(master=frm_satus, text=status_text)
     status_bar.grid(row=0, column=0, sticky="E", pady=3)
