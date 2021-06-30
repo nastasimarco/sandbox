@@ -14,12 +14,6 @@ from scipy.integrate import odeint
 from scipy import signal
 import time
 
-# global variables
-CANVAS_W = 1000 # px
-CANVAS_H = CANVAS_W
-run = False
-stopped = True
-
 class Cyclotron:
     def __init__(self):
         """Cyclotron constructor. Set the default data, the timescale, 
@@ -73,8 +67,9 @@ class Cyclotron:
         self.timescale = self.default_timescale
     
     def set_data(self, static_flag):
-        """Set data reading input. If static_flag=False set only non
-        static paramters. If static_flag=True set all data and reset time.
+        """Set data reading input.
+        If static_flag=True set all data and reset time.
+        If static_flag=False set only non static paramters.
         """
         if static_flag:
             z = self.input_data[:4]
@@ -126,15 +121,21 @@ class Cyclotron:
     def draw_first_frame(self, canvas):
         """Draw the first frame of the animation on the given canvas."""
         self.canvas = canvas
+        self.cw = int(self.canvas["width"])
+        self.ch = int(self.canvas["height"])
 
         self.set_colors()
 
         # center features
-        self.cx = int(self.canvas["width"]) / 2
-        self.cy = int(self.canvas["height"]) / 2
+        # self.cx = int(self.canvas["width"]) / 2
+        # self.cy = int(self.canvas["height"]) / 2
+        self.cx = int(self.cw / 2)
+        self.cy = int(self.ch / 2)
         
         cx = self.cx
         cy = self.cy
+        cw = self.cw
+        ch = self.ch
         scale = self.scale
 
         # dees features
@@ -165,9 +166,9 @@ class Cyclotron:
         x = self.x * scale
         y = self.y * scale
         coord = (cx + (x - p_r),
-                 CANVAS_H - (cy + (y - p_r)),
+                 ch - (cy + (y - p_r)),
                  cx + (x + p_r),
-                 CANVAS_H - (cy + (y + p_r)))
+                 ch - (cy + (y + p_r)))
         self.particle = self.canvas.create_oval(coord,
                                                 fill=self.p_color,
                                                 outline=self.p_color)
@@ -212,8 +213,7 @@ class Cyclotron:
         self.vx = sol[:, 2][-1]
         self.vy = sol[:, 3][-1]
 
-    def move_particle(self, PlayPause_func, btn_play, status_bar, monitors):
-        # TODO: lascio la variabile "run" globale?
+    def move(self, PlayPause_func, btn_play, status_bar, monitors):
         """Perform the animation. Use PlayPause_func to pause the 
         animation in the case the particle would go out of canvas, 
         disable the play button (btn_play) and update the status_bar and
@@ -221,6 +221,8 @@ class Cyclotron:
         Compute the time taken to produce a frame attempting to keep
         the animation fps constant, limitations depends on hardware.
         """
+        global run
+
         t1 = time.time()
         move_params = (PlayPause_func, btn_play, status_bar, monitors)
         self.set_colors()
@@ -231,6 +233,8 @@ class Cyclotron:
             scale = self.scale
             cx = self.cx
             cy = self.cy
+            cw = self.cw
+            ch = self.ch
             p_r = self.p_r
 
             # canvas old coordinates of particle
@@ -252,11 +256,11 @@ class Cyclotron:
             if ( # particle would go out of canvas
                  (cx + x < 0)
                  or
-                 (cx + x > CANVAS_W)
+                 (cx + x > cw)
                  or
                  (cy + y < 0)
                  or
-                 (cy + y > CANVAS_H)
+                 (cy + y > ch)
                 ):
                 PlayPause_func
                 btn_play["state"] = "disabled"
@@ -265,9 +269,9 @@ class Cyclotron:
                 # print("Delayed frames:", self.delayed)
             else:
                 coord = (cx + (x - p_r),
-                         CANVAS_H - (cy + (y - p_r)),
+                         ch - (cy + (y - p_r)),
                          cx + (x + p_r),
-                         CANVAS_H - (cy + (y + p_r)))
+                         ch - (cy + (y + p_r)))
                 self.canvas.coords(self.particle, coord)
                 self.canvas.itemconfigure(self.particle,
                                           fill=self.p_color,
@@ -277,8 +281,8 @@ class Cyclotron:
                 # canvas coordinates of track segment
                 x1 = cx + old_x
                 x2 = cx + x
-                y1 = CANVAS_H - (cy + old_y)
-                y2 = CANVAS_H - (cy + y)
+                y1 = ch - (cy + old_y)
+                y2 = ch - (cy + y)
                 self.canvas.create_line(x1, y1, x2, y2, fill=self.p_color)
 
                 # update the dt, check and increment t array
@@ -293,56 +297,65 @@ class Cyclotron:
                 delay = (t2 - t1)*1000
                 if self.ms >= delay:
                     d_ms = int(self.ms - delay)
-                    self.canvas.after(d_ms, self.move_particle, *move_params)
+                    self.canvas.after(d_ms, self.move, *move_params)
                 else: # delayed frame
                     self.delayed += 1
-                    self.canvas.after(0, self.move_particle, *move_params)
+                    self.canvas.after(0, self.move, *move_params)
                 # self.canvas.after(int(self.ms - delay), self.move_particle)
         else:
             # print("Delayed frames:", self.delayed)
             pass
 
 def TscaleDown():
-    global Cycl, lbl_tscale
-    Cycl.timescale = Cycl.timescale / 10**(1/5)
-    lbl_tscale["text"] = f"Time scale = {Cycl.timescale:.3e}"
+    """"Reduce the time scale."""
+    global lbl_tscale, Animation
+    Animation.timescale = Animation.timescale / 10**(1/5)
+    lbl_tscale["text"] = f"Time scale = {Animation.timescale:.3e}"
 
 def TscaleUp():
-    global Cycl, lbl_tscale
-    Cycl.timescale = Cycl.timescale * 10**(1/5)
-    lbl_tscale["text"] = f"Time scale = {Cycl.timescale:.3e}"
+    """"Increase the time scale."""
+    global lbl_tscale, Animation
+    Animation.timescale = Animation.timescale * 10**(1/5)
+    lbl_tscale["text"] = f"Time scale = {Animation.timescale:.3e}"
 
 def Animate():
-    global Cycl
+    """Start the animation calling the Animation.move method."""
+    global Animation
     move_params = (PlayPause, btn_play, status_bar, monitors)
-    Cycl.move_particle(*move_params)
+    Animation.move(*move_params)
 
 def UpdateParams():
-    global Cycl
-    Cycl.set_data(static_flag=False)
-    Cycl.monitors_update(monitors)
+    """Update data and monitors while the animation is not stopped."""
+    global Animation
+    Animation.set_data(static_flag=False)
+    Animation.monitors_update(monitors)
 
 def FirstFrame():
-    global Cycl, canvas
+    """Clear the canvas, draw the first frame of the animation calling the 
+    Animation.draw_first_frame method.
+    """
+    global canvas, Animation
     canvas.delete(tk.ALL)
-    Cycl.draw_first_frame(canvas)
+    Animation.draw_first_frame(canvas)
 
 def PlayPause():
-    global run, btn_play, stopped, status_bar, entries, Cycl
+    """Play/Pause the animation."""
+    global run, btn_play, stopped, status_bar, entries, Animation
     run = not run
     stopped = False
     if run:
         status_bar["text"] = "Playing..."
         Animate()
         btn_play.configure(text="\u23F8")
-        for i in Cycl.static_params:
+        for i in Animation.static_params:
             entries[i]["state"] = "disabled"
     else:
         status_bar["text"] = "Paused"
         btn_play.configure(text="\u25B6")
 
 def Stop():
-    global stopped, btn_play, entries, Cycl
+    """Stop the animation, redraw the first frame."""
+    global stopped, btn_play, entries, Animation
     stopped = True
     if (btn_play["state"] == "disabled"):
         btn_play["state"] = "normal"
@@ -353,22 +366,23 @@ def Stop():
         PlayPause()
         Stop()
     else:
-        for i in Cycl.static_params:
+        for i in Animation.static_params:
             entries[i]["state"] = "normal"
-        Cycl.set_data(static_flag=True)
-        Cycl.monitors_update(monitors)
+        Animation.set_data(static_flag=True)
+        Animation.monitors_update(monitors)
         FirstFrame()
         status_bar["text"] = "Ready"
 
 def Read():
+    """Read the entries and update data."""
     global entries
     for i, entry in enumerate(entries):
         try:
-            Cycl.input_data[i] = float(entry.get())
+            Animation.input_data[i] = float(entry.get())
         except ValueError:
-            Cycl.input_data[i] = Cycl.default_data[i]
+            Animation.input_data[i] = Animation.default_data[i]
         entries[i].delete(0, tk.END)
-        entries[i].insert(0, f"{Cycl.input_data[i]:.3e}")
+        entries[i].insert(0, f"{Animation.input_data[i]:.3e}")
     
     if (not stopped):    
         UpdateParams()
@@ -376,37 +390,55 @@ def Read():
         Stop()
 
 def SetEntries():
+    """Read the input data and fill the entries."""
     global entries
-    for i, p in enumerate(Cycl.input_data):
+    for i, p in enumerate(Animation.input_data):
         entries[i].delete(0, tk.END)
         entries[i].insert(0, f"{p:.3e}")
     
 def Reset():
-    global lbl_tscale, Cycl
-    Cycl.restore_default()
-    lbl_tscale["text"] = f"Time scale = {Cycl.timescale:.3e}"
+    """Restore default data and timescale."""
+    global lbl_tscale, Animation
+    Animation.restore_default()
+    lbl_tscale["text"] = f"Time scale = {Animation.timescale:.3e}"
     SetEntries()
     Read()
     
-def SetWindow(labels, units, monitors_texts):
+def SetWindow(AnimationClass):
+    """Set the window layout, instantiate the AnimationClass, prepare
+    the animation calling the Reset() function.
+    """
+    global Animation
     global canvas
     global btn_play
     global entries, lbl_tscale, monitors, status_bar
+    global run, stopped
+
+    run = False
+    stopped = True
+    
+    Animation = AnimationClass()
+    labels = Animation.labels
+    units = Animation.units
+    monitors_texts = Animation.monitors_texts
+
     # initialize root Window
     root = tk.Tk()
     root.title("Interactive Cyclotron animation")
     root.resizable(False,False)
     
-    # Two principal frames, for canvas and sidebar
+    # two principal frames, for canvas and sidebar
     frm_canvas = tk.Frame(master=root, relief=tk.RIDGE, borderwidth=1)
     frm_side = tk.Frame(master=root, relief=tk.RIDGE, borderwidth=0)
     
-    # Canvas inside his frame
+    # canvas inside his frame
+    CANVAS_W = 1000 # px
+    CANVAS_H = CANVAS_W
     canvas = tk.Canvas(frm_canvas, width=CANVAS_W, height=CANVAS_H, bg="white")
     canvas.pack()
     frm_canvas.grid(row=0, column=0)
     
-    # Buttons inside their frame (inside side frame)
+    # buttons inside their frame (inside side frame)
     frm_btns = tk.Frame(master=frm_side, relief=tk.RIDGE, borderwidth=0)
     btn_exit = tk.Button(master=frm_btns, text="Exit", command=root.destroy)
     btn_exit.grid(row=0, column=3, sticky="NE", pady=5)
@@ -420,19 +452,19 @@ def SetWindow(labels, units, monitors_texts):
     btn_reset.grid(row=1, column=3, sticky="N", pady=10)
     frm_btns.pack(padx=10, pady=10)
     
-    # Labels and entries inside data frame (inside side frame)
+    # labels and entries inside data frame (inside side frame)
     frm_data = tk.Frame(master=frm_side, relief=tk.RIDGE, borderwidth=0)
     entries = []
-    for i, label in enumerate(labels):
+    for i, (label, unit) in enumerate(zip(labels, units)):
         lbl_par = tk.Label(master=frm_data, text=f"{label} =")
         entries.append(tk.Entry(master=frm_data, width=10))
-        lbl_unit = tk.Label(master=frm_data, text=units[i])
+        lbl_unit = tk.Label(master=frm_data, text=unit)
         lbl_par.grid(row=i, column=0, sticky="SE", pady=3)
         entries[i].grid(row=i, column=1, sticky="S", pady=3, padx=5)
         lbl_unit.grid(row=i, column=2, sticky="SW", pady=3)
     frm_data.pack(pady=25)
 
-    # Timescale buttons and label inside their frame (inside side frame)
+    # timescale buttons and label inside their frame (inside side frame)
     frm_tscale = tk.Frame(master=frm_side, relief=tk.RIDGE, borderwidth=0)
     btn_tscale_down = tk.Button(master=frm_tscale, text=" - ", command=TscaleDown)
     lbl_tscale = tk.Label(master=frm_tscale)
@@ -442,7 +474,7 @@ def SetWindow(labels, units, monitors_texts):
     btn_tscale_up.grid(row=0, column=2, sticky="nsew")
     frm_tscale.pack()
     
-    # Monitor labels inside their frame (inside side frame)
+    # monitor labels inside their frame (inside side frame)
     monitors = []
     frm_monitors = tk.Frame(master=frm_side, relief=tk.SUNKEN, borderwidth=1)
     for i, _ in enumerate(monitors_texts):
@@ -450,7 +482,7 @@ def SetWindow(labels, units, monitors_texts):
         monitors[i].grid(row=i, column=0, sticky="W", padx=10, pady=3)
     frm_monitors.pack(pady=40)
 
-    # Status bar inside his frame (inside side frame)
+    # status bar inside his frame (inside side frame)
     frm_satus = tk.Frame(master=frm_side, relief=tk.SUNKEN, borderwidth=1)
     status_text = "Ready"
     status_bar = tk.Label(master=frm_satus, text=status_text)
@@ -464,5 +496,4 @@ def SetWindow(labels, units, monitors_texts):
     root.mainloop()
 
 if __name__ == '__main__':
-   Cycl = Cyclotron()
-   SetWindow(Cycl.labels, Cycl.units, Cycl.monitors_texts)
+   SetWindow(Cyclotron)
