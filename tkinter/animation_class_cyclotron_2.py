@@ -20,7 +20,7 @@ class Cyclotron:
         the length scale, the variables to monitor, the animation features.
         """
         self.delayed = 0 # counter for delayed frames
-        
+
         # default data
         self.default_timescale = 6.7e-5
         default_lengthscale = 1e3 # pixel/m
@@ -52,6 +52,7 @@ class Cyclotron:
                                "T = ... s",
                                "v = ... m/s",
                                "p = ... eV/c",
+                               "K = ... eV",
                                "\u03B3 = ...",
                               )
 
@@ -112,12 +113,14 @@ class Cyclotron:
         self.v = np.sqrt(self.vx**2 + self.vy**2)
         # p_eV = (self.v * self.m) / 5.344286e-28
         p_eV = (self.v * self.m * c) / qp # impulse of particle (eV/c)
+        K_eV = p_eV**2 / (2 * self.m * c**2 / qp)
         omega = self.q*self.B/self.m # cyclotron frequency
         gamma = 1 / (np.sqrt(1 - (self.v/c)**2))
         monitors[0]["text"] = f"T = {np.abs((2*np.pi)/omega):.3e} s"
         monitors[1]["text"] = f"v = {self.v:.3e} m/s"
-        monitors[2]["text"] = f"p = {p_eV/1e3:.3e} KeV/c"
-        monitors[3]["text"] = f"\u03B3 = {gamma:.3e}"
+        monitors[2]["text"] = f"p = {p_eV:.3e} eV/c"
+        monitors[3]["text"] = f"K = {K_eV:.3e} eV"
+        monitors[4]["text"] = f"\u03B3 = {gamma:.3e}"
 
     def draw_first_frame(self, canvas):
         """Draw the first frame of the animation on the given canvas."""
