@@ -19,11 +19,12 @@ class Cyclotron:
         """Cyclotron constructor. Set the default data, the timescale, 
         the length scale, the variables to monitor, the animation features.
         """
+        self.delayed = 0 # counter for delayed frames
+        
         # default data
-        self.scale = 1e3 # length scale (pixel/m)
         self.default_timescale = 6.7e-5
-        self.fps = 100 # framerate (frame/s)
-        self.delayed = 0
+        default_lengthscale = 1e3 # pixel/m
+        default_fps = 100 # framerate (frame/s)
         x0 = 0 # m
         y0 = 0 # m
         vx0 = 0 # m/s
@@ -35,13 +36,16 @@ class Cyclotron:
         E0 = 1e1 # V/m
         gap0 = 0.02 # m
         dr0 = 0.45 # m
-        self.default_data = (x0, y0, vx0, vy0, qp, mp, B0, E0, gap0, dr0)
+        self.default_data = (x0, y0, vx0, vy0, qp, mp, B0, E0, gap0, dr0,
+                             default_lengthscale, default_fps)
         self.labels = ("x\u2080", "y\u2080", "vx\u2080", "vy\u2080",
-                       "q", "m", "B", "E", "gap", "D radius")
-        self.units = ("m", "m", "m/s", "m/s", "C", "Kg", "T", "V/m", "m", "m")
+                       "q", "m", "B", "E", "gap", "D radius", 
+                       "length scale", "fps")
+        self.units = ("m", "m", "m/s", "m/s", "C", "Kg", "T", "V/m", "m", "m",
+                      "pixel/m", "frame/s")
 
         # indices of parameters that cannot be changed while playing animation
-        self.static_params = (0, 1, 2, 3, -2, -1)
+        self.static_data = (0, 1, 2, 3, -4, -3, -2, -1)
         
         # prepare the texts for the variables to monitor
         self.monitors_texts = (
@@ -55,12 +59,6 @@ class Cyclotron:
         self.input_data = np.array(self.default_data, dtype=float)
         self.timescale = self.default_timescale
         
-        # animation features
-        self.ms = 1000/self.fps # time interval between frames (ms)
-        self.dt = 1e-3 * self.ms * self.timescale # time step (s)
-        # time array to solve differential equations
-        self.t = np.array([0, self.dt])
-
     def restore_default(self):
         """Restore to default self.input_data and self.timescale"""
         self.input_data = np.array(self.default_data, dtype=float)
@@ -72,13 +70,16 @@ class Cyclotron:
         If static_flag=False set only non static paramters.
         """
         if static_flag:
-            z = self.input_data[:4]
-            params = self.input_data[4:]
-            self.x, self.y, self.vx, self.vy = z
-            self.q, self.m, self.B, self.E, self.gap, self.d_r = params
+            self.x, self.y, self.vx, self.vy = self.input_data[:4]
+            self.q, self.m, self.B, self.E, self.gap, self.d_r = self.input_data[4:-2]
+            self.lengthscale, self.fps = self.input_data[-2:]
+            # animation features
+            self.ms = 1000/self.fps # time interval between frames (ms)
+            self.dt = 1e-3 * self.ms * self.timescale # time step (s)
+            # time array to solve differential equations
             self.t = np.array([0, self.dt])
         else:
-            self.q, self.m, self.B, self.E = self.input_data[4:-2]
+            self.q, self.m, self.B, self.E = self.input_data[4:-4]
 
     def set_colors(self):
         """Set the particle color checking the charge and the dees colors
@@ -134,7 +135,7 @@ class Cyclotron:
         cy = self.cy
         cw = self.cw
         ch = self.ch
-        scale = self.scale
+        scale = self.lengthscale
 
         # dees features
         # canvas coordinates of dees
@@ -227,7 +228,7 @@ class Cyclotron:
         if run: # run must be a global variable
             z0 = self.x, self.y, self.vx, self.vy
             params = self.q, self.m, self.B, self.E, self.gap, self.d_r
-            scale = self.scale
+            scale = self.lengthscale
             cx = self.cx
             cy = self.cy
             cw = self.cw
@@ -344,7 +345,7 @@ def PlayPause():
         status_bar["text"] = "Playing..."
         Animate()
         btn_play.configure(text="\u23F8")
-        for i in Animation.static_params:
+        for i in Animation.static_data:
             entries[i]["state"] = "disabled"
     else:
         status_bar["text"] = "Paused"
@@ -363,7 +364,7 @@ def Stop():
         PlayPause()
         Stop()
     else:
-        for i in Animation.static_params:
+        for i in Animation.static_data:
             entries[i]["state"] = "normal"
         Animation.set_data(static_flag=True)
         Animation.monitors_update(monitors)
