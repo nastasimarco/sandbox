@@ -127,8 +127,6 @@ class Cyclotron:
         self.set_colors()
 
         # center features
-        # self.cx = int(self.canvas["width"]) / 2
-        # self.cy = int(self.canvas["height"]) / 2
         self.cx = int(self.cw / 2)
         self.cy = int(self.ch / 2)
         
@@ -222,12 +220,11 @@ class Cyclotron:
         the animation fps constant, limitations depends on hardware.
         """
         global run
-
         t1 = time.time()
         move_params = (PlayPause_func, btn_play, status_bar, monitors)
         self.set_colors()
         self.monitors_update(monitors)
-        if run:
+        if run: # run must be a global variable
             z0 = self.x, self.y, self.vx, self.vy
             params = self.q, self.m, self.B, self.E, self.gap, self.d_r
             scale = self.scale
@@ -417,6 +414,7 @@ def SetWindow(AnimationClass):
     run = False
     stopped = True
     
+    # instantiate the class
     Animation = AnimationClass()
     labels = Animation.labels
     units = Animation.units
