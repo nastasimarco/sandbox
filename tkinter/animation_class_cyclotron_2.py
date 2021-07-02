@@ -17,12 +17,12 @@ import time
 class Cyclotron:
     def __init__(self):
         """Cyclotron constructor. Set the default data, the timescale, 
-        the length scale, the variables to monitor, the animation features.
+        the length scale, the variables to monitor.
         """
         self.delayed = 0 # counter for delayed frames
 
         # default data
-        self.default_timescale = 6.7e-5
+        self.default_timescale = 6.5e-5
         default_lengthscale = 1e3 # pixel/m
         default_fps = 100 # framerate (frame/s)
         x0 = 0 # m
@@ -66,9 +66,9 @@ class Cyclotron:
         self.timescale = self.default_timescale
     
     def set_data(self, static_flag):
-        """Set data reading input.
-        If static_flag=True set all data and reset time.
-        If static_flag=False set only non static paramters.
+        """Set the data by reading the input.
+        If static_flag=True set all data, animation features and reset time.
+        If static_flag=False set only non static parameters.
         """
         if static_flag:
             self.x, self.y, self.vx, self.vy = self.input_data[:4]
@@ -311,13 +311,13 @@ def TscaleDown():
     """"Reduce the time scale."""
     global lbl_tscale, Animation
     Animation.timescale = Animation.timescale / 10**(1/5)
-    lbl_tscale["text"] = f"Time scale = {Animation.timescale:.3e}"
+    lbl_tscale["text"] = f"time scale = {Animation.timescale:.3e}"
 
 def TscaleUp():
     """"Increase the time scale."""
     global lbl_tscale, Animation
     Animation.timescale = Animation.timescale * 10**(1/5)
-    lbl_tscale["text"] = f"Time scale = {Animation.timescale:.3e}"
+    lbl_tscale["text"] = f"time scale = {Animation.timescale:.3e}"
 
 def Animate():
     """Start the animation calling the Animation.move method."""
@@ -376,7 +376,7 @@ def Stop():
 
 def Read():
     """Read the entries and update data."""
-    global entries
+    global entries, Animation
     for i, entry in enumerate(entries):
         try:
             Animation.input_data[i] = float(entry.get())
@@ -401,7 +401,7 @@ def Reset():
     """Restore default data and timescale."""
     global lbl_tscale, Animation
     Animation.restore_default()
-    lbl_tscale["text"] = f"Time scale = {Animation.timescale:.3e}"
+    lbl_tscale["text"] = f"time scale = {Animation.timescale:.3e}"
     SetEntries()
     Read()
     
@@ -426,7 +426,7 @@ def SetWindow(AnimationClass):
 
     # initialize root Window
     root = tk.Tk()
-    root.title("Interactive Cyclotron animation")
+    root.title("Interactive Cyclotron Animation")
     root.resizable(False,False)
     
     # two principal frames, for canvas and sidebar
